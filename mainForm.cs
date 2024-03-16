@@ -30,6 +30,7 @@ namespace LTL100_9x9
             [8] = 0b0001_0000_0000,
         };
         SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
+
         public mainForm()
         {
             InitializeComponent();
@@ -62,7 +63,6 @@ namespace LTL100_9x9
             comboIndex.DropDownClosed += async (s, e) => await Task.Run(() => SetIndex(s));
             comboMode.DropDownClosed += async (s, e) => await Task.Run(() => SetMode(s));
         }
-
         private void FormLoad(object sender, EventArgs e)
         {
             ComDefault();
@@ -138,23 +138,21 @@ namespace LTL100_9x9
         private void ToInfoStatus(string msg) => BeginInvoke((MethodInvoker)(() => InfoStatus.Text = msg));
         private void AfterComEvent(bool sw)
         {
-            comPort.Enabled = !sw;
-            RefreshSerial.Enabled = !sw;
-            TcpPage.Enabled = !sw;
+            comPort.Enabled = 
+                RefreshSerial.Enabled = 
+                TcpPage.Enabled = !sw;
             StaticSettings.mbClass = sw ? new ModBusClass(mbRtu) : null;
         }
         private void AfterTcpEvent(bool sw)
         {
-            RtuPage.Enabled = !sw;
-            IPaddressBox.Enabled = !sw;
-            numericPort.Enabled = !sw;
+            RtuPage.Enabled = 
+                IPaddressBox.Enabled = 
+                numericPort.Enabled = !sw;
             StaticSettings.mbClass = sw ? new ModBusClass(mbTcp) : null;
         }
         private void AfterAnyInterfaceEvent(bool sw)
-        {
-            LTLControlPage.Enabled = sw;
-            SettingsPanel.Enabled = sw;
-        }
+            => LTLControlPage.Enabled = 
+                SettingsPanel.Enabled = sw;
         private void AfterStartReading(bool sw)
             => manualReadButton.Enabled =
                         OpenCom.Enabled =
@@ -214,7 +212,7 @@ namespace LTL100_9x9
         }
         //* Не тестировалось
 
-        //Just mothods
+        //*Just mothods
         private void ButtonColorChange(Button btn)
             => BeginInvoke((MethodInvoker)(() => {
                 btn.BackColor = ColorTranslator.FromHtml($"#" +
