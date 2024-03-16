@@ -40,24 +40,27 @@ namespace LTL100_9x9
         {
             Load += FormLoad;
             comPort.SelectedIndexChanged += (s, e) => mbRtu.PortName = comPort.SelectedItem.ToString();
-            BaudRate.SelectedIndexChanged += (s, e) => BaudRateSelectedIndexChanged(s, e);
+            BaudRate.SelectedIndexChanged += (s, e) => BaudRateSelectedIndexChanged();
             RefreshSerial.Click += (s, e) => AddPorts(comPort);
             foreach (ToolStripDropDownItem item in dataBits.DropDownItems) item.Click += DataBitsForSerial;
             foreach (ToolStripDropDownItem item in Parity.DropDownItems) item.Click += ParityForSerial;
             foreach (ToolStripDropDownItem item in stopBits.DropDownItems) item.Click += StopBitsForSerial;
-            manualRButton.CheckedChanged += (s, e) => { StaticSettings.autoRead = !manualRButton.Checked; };
+            manualRButton.CheckedChanged += (s, e) => StaticSettings.autoRead = !manualRButton.Checked;
             OpenCom.Click += OpenComClick;
             Connect.Click += ConnectClick;
-            manualReadButton.Click += async (s, e) => { await Task.Run(() => StartReading()); };
-            RegistersGrid.CellEndEdit += async (s, e) => { await Task.Run(() => CellSetRegisterValue(s, e)); };
-            UploadImageButton.Click += async (s, e) => { await Task.Run(() => UploadImage()); };
+            manualReadButton.Click += async (s, e) => await Task.Run(() => StartReading());
+            RegistersGrid.CellEndEdit += async (s, e) => await Task.Run(() => CellSetRegisterValue(s, e));
+            UploadImageButton.Click += async (s, e) => await Task.Run(() => UploadImage());
             checkBlink.CheckedChanged += (s, e) => numericBlinkTimer.Enabled = checkBlink.Checked;
             checkRefreshPic.CheckedChanged += (s, e) =>
-                groupBlink.Enabled = groupColor.Enabled = groupTools.Enabled = UploadImageButton.Enabled = !checkRefreshPic.Checked;
+                groupBlink.Enabled = 
+                groupColor.Enabled = 
+                groupTools.Enabled = 
+                UploadImageButton.Enabled = !checkRefreshPic.Checked;
             comboMode.SelectedItem = comboMode.Items[0];
             comboIndex.SelectedItem = comboMode.Items[0];
-            comboIndex.DropDownClosed += async (s, e) => { await Task.Run(() => SetIndex(s)); };
-            comboMode.DropDownClosed += async (s, e) => { await Task.Run(() => SetMode(s)); };
+            comboIndex.DropDownClosed += async (s, e) => await Task.Run(() => SetIndex(s));
+            comboMode.DropDownClosed += async (s, e) => await Task.Run(() => SetMode(s));
         }
 
         private void FormLoad(object sender, EventArgs e)
@@ -75,7 +78,7 @@ namespace LTL100_9x9
             DataBitsForSerial(dataBits8, null);
             ParityForSerial(ParityNone, null);
             StopBitsForSerial(stopBits1, null);
-            BaudRateSelectedIndexChanged(null, null);
+            BaudRateSelectedIndexChanged();
         }
         private void AddPorts(ComboBox box)
         {
@@ -130,9 +133,9 @@ namespace LTL100_9x9
             stopbits.CheckState = CheckState.Checked;
             StopBitsInfo.Text = stopbits.Text;
         }
-        private void BaudRateSelectedIndexChanged(object sender, EventArgs e)
+        private void BaudRateSelectedIndexChanged()
             => mbRtu.BaudRate = Convert.ToInt32(BaudRate.SelectedItem);
-        private void ToInfoStatus(string msg) => BeginInvoke((MethodInvoker)(() => { InfoStatus.Text = msg; }));
+        private void ToInfoStatus(string msg) => BeginInvoke((MethodInvoker)(() => InfoStatus.Text = msg));
         private void AfterComEvent(bool sw)
         {
             comPort.Enabled = !sw;
@@ -177,9 +180,7 @@ namespace LTL100_9x9
             AfterComEvent(mbRtu.IsOpen);
             AfterAnyInterfaceEvent(mbRtu.IsOpen);
         }
-        //
-        //*********************************************************************************************************
-        //
+        //* Не тестировалось
         private void ConnectClick(object sender, EventArgs e)
         {
             try
@@ -211,9 +212,9 @@ namespace LTL100_9x9
             AfterTcpEvent(mbTcp.Connected);
             AfterAnyInterfaceEvent(mbTcp.Connected);
         }
-        //
-        //*********************************************************************************************************
-        //
+        //* Не тестировалось
+
+        //Just mothods
         private void ButtonColorChange(Button btn)
             => BeginInvoke((MethodInvoker)(() => {
                 btn.BackColor = ColorTranslator.FromHtml($"#" +
@@ -346,11 +347,9 @@ namespace LTL100_9x9
             await Task.Delay(50);
             return reply.Item2;
         }
-
-
         private void DownloadImage()
         {
-            /* x = 9 => 0|0|0|0|0|0|0|0|0
+            /* x = 9 => 0|1|2|3|4|5|6|7|8
              * y = 3 => 0:red | 1:green | 2:blue*/
             int[,] colors = new int[3, 9];
             for (int y = 0, i = (int)REnumerate.led_ctrl_r_0; y < colors.GetLength(0); y++)
@@ -367,6 +366,7 @@ namespace LTL100_9x9
         private void ChangeColorButtons(int x, int y, string color) => BeginInvoke((MethodInvoker)(() => { 
             ltl9x9[x, y].BackColor = ColorTranslator.FromHtml(color); }));
 
+        //Tasks
         async private Task StartReading()
         {
             AfterStartReading(autoRButton.Checked);
