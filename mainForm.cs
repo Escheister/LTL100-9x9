@@ -16,6 +16,7 @@ namespace LTL100_9x9
     public partial class mainForm : Form
     {
         private Socket mbTcp;
+        public ModBusClass mbClass { get; set; } = null;
         private Button[,] ltl9x9;
         private Dictionary<int, int> getBit = new Dictionary<int, int>()
         {
@@ -46,7 +47,6 @@ namespace LTL100_9x9
             foreach (ToolStripDropDownItem item in dataBits.DropDownItems) item.Click += DataBitsForSerial;
             foreach (ToolStripDropDownItem item in Parity.DropDownItems) item.Click += ParityForSerial;
             foreach (ToolStripDropDownItem item in stopBits.DropDownItems) item.Click += StopBitsForSerial;
-            manualRButton.CheckedChanged += (s, e) => StaticSettings.autoRead = !manualRButton.Checked;
             OpenCom.Click += OpenComClick;
             Connect.Click += ConnectClick;
             manualReadButton.Click += async (s, e) => await Task.Run(() => StartReading());
@@ -141,14 +141,14 @@ namespace LTL100_9x9
             comPort.Enabled = 
                 RefreshSerial.Enabled = 
                 TcpPage.Enabled = !sw;
-            StaticSettings.mbClass = sw ? new ModBusClass(mbRtu) : null;
+            mbClass = sw ? new ModBusClass(mbRtu) : null;
         }
         private void AfterTcpEvent(bool sw)
         {
             RtuPage.Enabled = 
                 IPaddressBox.Enabled = 
                 numericPort.Enabled = !sw;
-            StaticSettings.mbClass = sw ? new ModBusClass(mbTcp) : null;
+            mbClass = sw ? new ModBusClass(mbTcp) : null;
         }
         private void AfterAnyInterfaceEvent(bool sw)
             => LTLControlPage.Enabled = 
@@ -326,9 +326,9 @@ namespace LTL100_9x9
         }));
         async private Task<Reply> WriteRegister(REnumerate register, ushort value)
         {
-            byte[] cmdOut = StaticSettings.mbClass.FormatModBusCMD((byte)ID.Value, ReadMB.WriteAO, (ushort)register, value);
+            byte[] cmdOut = mbClass.FormatModBusCMD((byte)ID.Value, ReadMB.WriteAO, (ushort)register, value);
 
-            Tuple<byte[], Reply> reply = StaticSettings.mbClass.Handler(cmdOut);
+            Tuple<byte[], Reply> reply = mbClass.Handler(cmdOut);
             ToInfoStatus($"Отправлено на ID: {ID.Value} : {reply.Item2}");
             if (reply.Item2 == Reply.Ok)
             {
@@ -339,8 +339,8 @@ namespace LTL100_9x9
         }
         async private Task<Reply> MWriteRegisters(REnumerate startRegister, ushort[] values)
         {
-            byte[] cmdOut = StaticSettings.mbClass.FormatMultiplyAO((byte)ID.Value, (ushort)startRegister, (ushort)values.Length, values);
-            Tuple<byte[], Reply> reply = StaticSettings.mbClass.Handler(cmdOut);
+            byte[] cmdOut = mbClass.FormatMultiplyAO((byte)ID.Value, (ushort)startRegister, (ushort)values.Length, values);
+            Tuple<byte[], Reply> reply = mbClass.Handler(cmdOut);
             ToInfoStatus($"Отправлено на ID: {ID.Value} : {reply.Item2}");
             await Task.Delay(50);
             return reply.Item2;
@@ -373,8 +373,8 @@ namespace LTL100_9x9
                 await semaphoreSlim.WaitAsync();
                 try
                 {
-                    byte[] cmdOut = StaticSettings.mbClass.FormatModBusCMD((byte)ID.Value, ReadMB.ReadAO, 0, 35);
-                    Tuple<byte[], Reply> reply = StaticSettings.mbClass.Handler(cmdOut);
+                    byte[] cmdOut = mbClass.FormatModBusCMD((byte)ID.Value, ReadMB.ReadAO, 0, 35);
+                    Tuple<byte[], Reply> reply = mbClass.Handler(cmdOut);
                     ToInfoStatus(reply.Item2.ToString());
                     if (reply.Item2 == Reply.Ok)
                     {
