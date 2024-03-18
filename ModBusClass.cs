@@ -6,7 +6,8 @@ using System;
 
 namespace MBus
 {
-    public enum ReadMB : byte { ReadDO = 0x01, ReadDI = 0x02, ReadAO = 0x03, ReadAI = 0x04, WriteDO = 0x05, WriteAO = 0x06, }
+    public enum ReadMB : byte { ReadDO = 0x01, ReadDI = 0x02, ReadAO = 0x03, ReadAI = 0x04,  }
+    public enum WriteMB : byte { WriteDO = 0x05, WriteAO = 0x06, }
     public enum MultiWriteMB : byte { MWriteDO = 0x0f, MWriteAO = 0x10, }
     public enum Reply
     {
@@ -25,14 +26,14 @@ namespace MBus
         public HandlerDelegate Handler;
         private void GetTypeDevice(object dev)
         {
-            if (dev is SerialPort)
+            if (dev is SerialPort ser)
             {
-                Port = (SerialPort)dev;
+                Port = ser;
                 Handler = WriteMbRtu;
             }
-            else if (dev is Socket)
+            else if (dev is Socket sock)
             {
-                Sock = (Socket)dev;
+                Sock = sock;
                 Handler = WriteMbTcp;
             }
         }
@@ -82,7 +83,7 @@ namespace MBus
             Reply reply = GetReply(cmdOut, cmdIn);
             return Tuple.Create(cmdIn, reply);
         }
-        public byte[] ModRTU_CRC(byte[] buf, int len)
+        private IEnumerable<byte> ModRTU_CRC(byte[] buf, int len)
         {
             ushort crc = 0xFFFF;
             for (int pos = 0; pos < len; pos++)
@@ -98,13 +99,12 @@ namespace MBus
                     else crc >>= 1;
                 }
             }
-            return BitConverter.GetBytes(crc).ToArray();
+            return BitConverter.GetBytes(crc);
         }
         private bool CheckCRC(byte[] cmdIn)
         {
-            byte[] crcIn = ModRTU_CRC(cmdIn, cmdIn.Length);
-            int _crcIn = (crcIn[0]<<8) | crcIn[1];
-            return _crcIn == 0;
+            byte[] crcIn = ModRTU_CRC(cmdIn, cmdIn.Length).ToArray();
+            return ((crcIn[0] << 8) | crcIn[1]) == 0;
         }
         private IEnumerable<byte> UShortToByteArray(ushort value) => BitConverter.GetBytes(value).Reverse();
         private Reply GetReply(byte[] cmdOut, byte[] cmdIn)
@@ -117,40 +117,38 @@ namespace MBus
         }
         public byte[] FormatModBusCMD(byte signature, ReadMB cmdMB, ushort startReg, ushort countReg)
         {
-            List<byte> bytes = new List<byte>() 
-            { 
-                signature, (byte)cmdMB, 
-            };
-            foreach (byte b in UShortToByteArray(startReg)) bytes.Add(b);
-            foreach (byte b in UShortToByteArray(countReg)) bytes.Add(b);
-            foreach (byte b in ModRTU_CRC(bytes.ToArray(), bytes.Count)) bytes.Add(b);
+            List<byte> bytes = new List<byte>() { signature, (byte)cmdMB };
+            bytes.AddRange(UShortToByteArray(startReg));
+            bytes.AddRange(UShortToByteArray(countReg));
+            bytes.AddRange(ModRTU_CRC(bytes.ToArray(), bytes.Count));
+            return bytes.ToArray();
+        }
+        public byte[] FormatModBusCMD(byte signature, WriteMB cmdMB, ushort startReg, ushort countReg)
+        {
+            List<byte> bytes = new List<byte>() { signature, (byte)cmdMB };
+            bytes.AddRange(UShortToByteArray(startReg));
+            bytes.AddRange(UShortToByteArray(countReg));
+            bytes.AddRange(ModRTU_CRC(bytes.ToArray(), bytes.Count));
             return bytes.ToArray();
         }
         public byte[] FormatMultiplyDO(byte signature, ushort startReg, ushort countReg, byte byteCount, byte[] valueDO)
         {
-            List<byte> bytes = new List<byte>()
-            {
-                signature, (byte)MultiWriteMB.MWriteDO,
-            };
-            foreach (byte b in UShortToByteArray(startReg)) bytes.Add(b);
-            foreach (byte b in UShortToByteArray(countReg)) bytes.Add(b);
+            List<byte> bytes = new List<byte>() { signature, (byte)MultiWriteMB.MWriteDO };
+            bytes.AddRange(UShortToByteArray(startReg));
+            bytes.AddRange(UShortToByteArray(countReg));
             bytes.Add(byteCount);
-            foreach (byte b in valueDO) bytes.Add(b);
-            foreach (byte b in ModRTU_CRC(bytes.ToArray(), bytes.Count)) bytes.Add(b);
+            bytes.AddRange(valueDO);
+            bytes.AddRange(ModRTU_CRC(bytes.ToArray(), bytes.Count));
             return bytes.ToArray();
         }
         public byte[] FormatMultiplyAO(byte signature, ushort startReg, ushort countReg, ushort[] valuesAO)
         {
-            List<byte> bytes = new List<byte>()
-            {
-                signature, (byte)MultiWriteMB.MWriteAO,
-            };
-            foreach (byte b in UShortToByteArray(startReg)) bytes.Add(b);
-            foreach (byte b in UShortToByteArray(countReg)) bytes.Add(b);
+            List<byte> bytes = new List<byte>() { signature, (byte)MultiWriteMB.MWriteAO };
+            bytes.AddRange(UShortToByteArray(startReg));
+            bytes.AddRange(UShortToByteArray(countReg));
             bytes.Add((byte)(valuesAO.Length*2));
-            foreach(ushort u in valuesAO)
-                foreach(byte b in UShortToByteArray(u)) bytes.Add(b);
-            foreach (byte b in ModRTU_CRC(bytes.ToArray(), bytes.Count)) bytes.Add(b);
+            foreach (ushort u in valuesAO) bytes.AddRange(UShortToByteArray(u));
+            bytes.AddRange(ModRTU_CRC(bytes.ToArray(), bytes.Count));
             return bytes.ToArray();
         }
         private int GetLength(byte[] cmdOut)

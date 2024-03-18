@@ -60,8 +60,8 @@ namespace LTL100_9x9
                 UploadImageButton.Enabled = !checkRefreshPic.Checked;
             comboMode.SelectedItem = comboMode.Items[0];
             comboIndex.SelectedItem = comboMode.Items[0];
-            comboIndex.DropDownClosed += async (s, e) => await Task.Run(() => SetIndex(s));
-            comboMode.DropDownClosed += async (s, e) => await Task.Run(() => SetMode(s));
+            comboIndex.DropDownClosed += async (s, e) => await Task.Run(() => SendSingleCommand(s, REnum.Image, labelIndex));
+            comboMode.DropDownClosed += async (s, e) => await Task.Run(() => SendSingleCommand(s, REnum.CmdReg, labelMode));
         }
         private void FormLoad(object sender, EventArgs e)
         {
@@ -223,12 +223,12 @@ namespace LTL100_9x9
         private void FillGrid() => BeginInvoke((MethodInvoker)(() => {
             RegistersGrid.Rows.Clear();
             string[] readOnly = { "ReadImage", "DI", "TTL", "Version" };
-            foreach (string enumName in Enum.GetNames(typeof(REnumerate)))
+            foreach (string enumName in Enum.GetNames(typeof(REnum)))
             {
-                Enum.TryParse(enumName, out REnumerate index);
-                byte size = index == REnumerate.TTL ? (byte)4 : (byte)2;
+                Enum.TryParse(enumName, out REnum index);
+                byte size = index == REnum.TTL ? (byte)4 : (byte)2;
                 RegistersGrid.Rows[RegistersGrid.Rows.Add((int)index, enumName, size)]
-                    .Cells[(int)GridEnum.WriteAO].ReadOnly = readOnly.Contains(enumName);
+                    .Cells[(int)CEnum.WriteAO].ReadOnly = readOnly.Contains(enumName);
             }
         }));
         private void SetCellValue(int column, int row, int value, byte[] valueHex)
@@ -304,11 +304,11 @@ namespace LTL100_9x9
                         if (ltl9x9[x, y] != null) ButtonColorChange(ltl9x9[x, y]);
         }
         private void SetInfoFromRegs() => BeginInvoke((MethodInvoker)(() => {
-            labelMode.Text = RegistersGrid[(int)GridEnum.ReadAO, (int)REnumerate.CmdReg].Value.ToString();
+            labelMode.Text = RegistersGrid[(int)CEnum.ReadAO, (int)REnum.CmdReg].Value.ToString();
             comboIndex.Enabled = labelMode.Text == "0";
             labelIndex.Text = labelMode.Text == "3"
-            ? RegistersGrid[(int)GridEnum.ReadAO, (int)REnumerate.DI].Value.ToString()
-            : RegistersGrid[(int)GridEnum.ReadAO, (int)REnumerate.ReadImage].Value.ToString();
+            ? RegistersGrid[(int)CEnum.ReadAO, (int)REnum.DI].Value.ToString()
+            : RegistersGrid[(int)CEnum.ReadAO, (int)REnum.ReadImage].Value.ToString();
             VersionLabel.Text = $"Ver: {RegistersGrid[3, 5].Value}";
             TimeSpan time = TimeSpan.FromSeconds(Convert.ToInt32(RegistersGrid[3, 4].Value));
             WorkTimeLabel.Text = $"TTL: ({time.Days}) " +
@@ -317,27 +317,27 @@ namespace LTL100_9x9
                                     $":{time.Seconds}";
         }));
         private void SetDiscretInput() => BeginInvoke((MethodInvoker)(() => {
-            if (byte.TryParse(RegistersGrid[(int)GridEnum.ReadAO, (int)REnumerate.DI].Value.ToString(), out byte DI)) {
+            if (byte.TryParse(RegistersGrid[(int)CEnum.ReadAO, (int)REnum.DI].Value.ToString(), out byte DI)) {
                 DI_0.BackColor = (DI & 0b0001) != 0 ? Color.LightGreen : Color.White;
                 DI_1.BackColor = (DI & 0b0010) != 0 ? Color.LightGreen : Color.White;
                 DI_2.BackColor = (DI & 0b0100) != 0 ? Color.LightGreen : Color.White;
                 DI_3.BackColor = (DI & 0b1000) != 0 ? Color.LightGreen : Color.White;
             }
         }));
-        async private Task<Reply> WriteRegister(REnumerate register, ushort value)
+        async private Task<Reply> WriteRegister(REnum register, ushort value)
         {
-            byte[] cmdOut = mbClass.FormatModBusCMD((byte)ID.Value, ReadMB.WriteAO, (ushort)register, value);
+            byte[] cmdOut = mbClass.FormatModBusCMD((byte)ID.Value, WriteMB.WriteAO, (ushort)register, value);
 
             Tuple<byte[], Reply> reply = mbClass.Handler(cmdOut);
             ToInfoStatus($"Отправлено на ID: {ID.Value} : {reply.Item2}");
             if (reply.Item2 == Reply.Ok)
             {
-                if (register == REnumerate.CmdReg && value == 8107) FillGrid();
+                if (register == REnum.CmdReg && value == 8107) FillGrid();
                 await Task.Delay(50);
             }
             return reply.Item2;
         }
-        async private Task<Reply> MWriteRegisters(REnumerate startRegister, ushort[] values)
+        async private Task<Reply> MWriteRegisters(REnum startRegister, ushort[] values)
         {
             byte[] cmdOut = mbClass.FormatMultiplyAO((byte)ID.Value, (ushort)startRegister, (ushort)values.Length, values);
             Tuple<byte[], Reply> reply = mbClass.Handler(cmdOut);
@@ -350,9 +350,9 @@ namespace LTL100_9x9
             /* x = 9 => 0|1|2|3|4|5|6|7|8
              * y = 3 => 0:red | 1:green | 2:blue*/
             int[,] colors = new int[3, 9];
-            for (int y = 0, i = (int)REnumerate.led_ctrl_r_0; y < colors.GetLength(0); y++)
+            for (int y = 0, i = (int)REnum.led_ctrl_r_0; y < colors.GetLength(0); y++)
                 for (int x = 0; x < colors.GetLength(1); x++, i++)
-                    colors[y, x] = Convert.ToUInt16(RegistersGrid[(int)GridEnum.ReadAO, i - 1].Value);
+                    colors[y, x] = Convert.ToUInt16(RegistersGrid[(int)CEnum.ReadAO, i - 1].Value);
 
             for (int x = 0; x < colors.GetLength(1); x++)
                 for (int y = 0; y < ltl9x9.GetLength(0); y++)
@@ -382,7 +382,7 @@ namespace LTL100_9x9
                         Array.Copy(reply.Item1, 3, data, 0, reply.Item1.Length - 3);
                         for (int r = 0, i = 0; r < RegistersGrid.Rows.Count; r++)
                         {
-                            byte size = Convert.ToByte(RegistersGrid[(int)GridEnum.size, r].Value);
+                            byte size = Convert.ToByte(RegistersGrid[(int)CEnum.size, r].Value);
                             byte[] dataReg = new byte[size];
                             Array.Copy(data, i, dataReg, 0, size);
                             int dataNum;
@@ -408,15 +408,15 @@ namespace LTL100_9x9
         }
         async private Task CellSetRegisterValue(object sender, DataGridViewCellEventArgs e)
         {
-            Enum.TryParse(RegistersGrid[(int)GridEnum.field, e.RowIndex].Value.ToString(), out REnumerate register);
-            if (RegistersGrid[(int)GridEnum.WriteAO, e.RowIndex].Value is null) return;
+            Enum.TryParse(RegistersGrid[(int)CEnum.field, e.RowIndex].Value.ToString(), out REnum register);
+            if (RegistersGrid[(int)CEnum.WriteAO, e.RowIndex].Value is null) return;
             await semaphoreSlim.WaitAsync();
             try {
-                if (UInt16.TryParse(RegistersGrid[(int)GridEnum.WriteAO, e.RowIndex].Value.ToString(), out ushort value)
+                if (UInt16.TryParse(RegistersGrid[(int)CEnum.WriteAO, e.RowIndex].Value.ToString(), out ushort value)
                     && await WriteRegister(register, value) == Reply.Ok) return;
                 throw new Exception();
             }
-            catch { ToInfoStatus("Error transcieve"); RegistersGrid[(int)GridEnum.WriteAO, e.RowIndex].Value = ""; }
+            catch { ToInfoStatus("Error transcieve"); RegistersGrid[(int)CEnum.WriteAO, e.RowIndex].Value = ""; }
             finally { semaphoreSlim.Release(); }
         }
         async private Task UploadImage()
@@ -429,28 +429,20 @@ namespace LTL100_9x9
             if (checkBlink.Checked) rgbArray[rgbArray.Length - 1] = GetBlinkTout();
             await semaphoreSlim.WaitAsync();
             try {
-                if (GetCellValue((int)GridEnum.ReadAO, (int)REnumerate.CmdReg) != 2)
-                    await WriteRegister(REnumerate.CmdReg, 2);
-                await MWriteRegisters(REnumerate.led_ctrl_r_0, rgbArray);
-                await WriteRegister(REnumerate.CmdReg, 1);
+                if (GetCellValue((int)CEnum.ReadAO, (int)REnum.CmdReg) != 2)
+                    await WriteRegister(REnum.CmdReg, 2);
+                await MWriteRegisters(REnum.led_ctrl_r_0, rgbArray);
+                await WriteRegister(REnum.CmdReg, 1);
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            catch { ToInfoStatus("Error transcieve"); }
             finally { semaphoreSlim.Release(); }
         }
-        async private Task SetMode(object sender)
+        async private Task SendSingleCommand(object sender, REnum rEnum, Label label)
         {
-            if (((ComboBox)sender).SelectedItem.ToString() == labelMode.Text) return;
+            if (((ComboBox)sender).SelectedItem.ToString() == label.Text) return;
             await semaphoreSlim.WaitAsync();
-            try { await WriteRegister(REnumerate.CmdReg, Convert.ToUInt16(((ComboBox)sender).SelectedItem)); }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
-            finally { semaphoreSlim.Release(); }
-        }
-        async private Task SetIndex(object sender)
-        {
-            if (((ComboBox)sender).SelectedItem.ToString() == labelMode.Text) return;
-            await semaphoreSlim.WaitAsync();
-            try { await WriteRegister(REnumerate.Image, Convert.ToUInt16(((ComboBox)sender).SelectedItem)); }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            try { await WriteRegister(rEnum, Convert.ToUInt16(((ComboBox)sender).SelectedItem)); }
+            catch { ToInfoStatus("Error transcieve"); }
             finally { semaphoreSlim.Release(); }
         }
     }

@@ -1,6 +1,6 @@
 ﻿namespace LTL100_9x9
 {
-    enum REnumerate
+    enum REnum
     {
         Image = 0, ReadImage = 1, DI = 2, CmdReg = 3, TTL = 4, Version = 6, BlinkTout = 34,
         led_ctrl_r_0 = 7,  led_ctrl_g_0 = 16, led_ctrl_b_0 = 25,
@@ -13,5 +13,5 @@
         led_ctrl_r_7 = 14, led_ctrl_g_7 = 23, led_ctrl_b_7 = 32,
         led_ctrl_r_8 = 15, led_ctrl_g_8 = 24, led_ctrl_b_8 = 33,
     }
-    enum GridEnum { register, field, size, ReadAO, WriteAO }
+    enum CEnum { register, field, size, ReadAO, WriteAO }
 }
