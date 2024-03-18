@@ -41,7 +41,7 @@ namespace LTL100_9x9
         private void AddEvents()
         {
             Load += FormLoad;
-            comPort.SelectedIndexChanged += (s, e) => mbRtu.PortName = comPort.SelectedItem.ToString();
+            comPort.SelectedIndexChanged += (s, e) => mbRtu.PortName = ((ComboBox)s).SelectedItem.ToString();
             BaudRate.SelectedIndexChanged += (s, e) => BaudRateSelectedIndexChanged();
             RefreshSerial.Click += (s, e) => AddPorts(comPort);
             foreach (ToolStripDropDownItem item in dataBits.DropDownItems) item.Click += DataBitsForSerial;
