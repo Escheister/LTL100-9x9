@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Net.Sockets;
@@ -52,19 +52,6 @@ namespace LTL100_9x9
             manualReadButton.Click += (s, e) => StartReading();
             RegistersGrid.CellEndEdit += async (s, e) => await Task.Run(() => CellSetRegisterValue(s, e));
             UploadImageButton.Click += async (s, e) => await Task.Run(() => UploadImage());
-            /*comboIndex.DropDownClosed += async (s, e) =>
-            {
-                object value = ((ComboBox)s).SelectedItem;
-                if (value.ToString() != labelIndex.Text)
-                    await Task.Run(() => SendSingleCommand(value, REnum.Image));
-            };
-            comboMode.DropDownClosed += async (s, e) =>
-            {
-                object value = ((ComboBox)s).SelectedItem;
-                if (((ComboBox)s).SelectedItem.ToString() != labelMode.Text)
-                    await Task.Run(() => SendSingleCommand(value, REnum.CmdReg));
-            };*/
-
             comboIndex.DropDownClosed += (s, e) => SendSingleCommand(s, REnum.Image, labelIndex.Text);
             comboMode.DropDownClosed += (s, e) => SendSingleCommand(s, REnum.CmdReg, labelMode.Text);
             checkBlink.CheckedChanged += (s, e) => numericBlinkTimer.Enabled = checkBlink.Checked;
