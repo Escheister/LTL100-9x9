@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using MBus;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Net.Sockets;
@@ -9,14 +10,12 @@ using System.Drawing;
 using System.Linq;
 using System;
 
-using MBus;
 
 namespace LTL100_9x9
 {
-    public partial class mainForm : Form
+    public partial class Form1 : Form
     {
         private Socket mbTcp;
-        public ModBusClass mbClass { get; set; } = null;
         private Button[,] ltl9x9;
         private Dictionary<int, int> getBit = new Dictionary<int, int>()
         {
@@ -31,8 +30,7 @@ namespace LTL100_9x9
             [8] = 0b0001_0000_0000,
         };
         SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
-
-        public mainForm()
+        public Form1()
         {
             InitializeComponent();
             this.Text += $" ver{Assembly.GetEntryAssembly().GetName().Version}";
@@ -41,47 +39,34 @@ namespace LTL100_9x9
         private void AddEvents()
         {
             Load += FormLoad;
-            comPort.SelectedIndexChanged += (s, e) => mbRtu.PortName = ((ComboBox)s).SelectedItem.ToString();
-            BaudRate.SelectedIndexChanged += (s, e) => BaudRateSelectedIndexChanged();
+            comPort.SelectedIndexChanged += (s, e) => mbRtu.PortName = comPort.SelectedItem.ToString();
+            BaudRate.SelectedIndexChanged += (s, e) => BaudRateSelectedIndexChanged(s, e);
             RefreshSerial.Click += (s, e) => AddPorts(comPort);
             foreach (ToolStripDropDownItem item in dataBits.DropDownItems) item.Click += DataBitsForSerial;
             foreach (ToolStripDropDownItem item in Parity.DropDownItems) item.Click += ParityForSerial;
             foreach (ToolStripDropDownItem item in stopBits.DropDownItems) item.Click += StopBitsForSerial;
+            manualRButton.CheckedChanged += (s, e) => { StaticSettings.autoRead = !manualRButton.Checked; };
             OpenCom.Click += OpenComClick;
             Connect.Click += ConnectClick;
-            manualReadButton.Click += (s, e) => StartReading();
-            RegistersGrid.CellEndEdit += async (s, e) => await Task.Run(() => CellSetRegisterValue(s, e));
-            UploadImageButton.Click += async (s, e) => await Task.Run(() => UploadImage());
-            /*comboIndex.DropDownClosed += async (s, e) =>
-            {
-                object value = ((ComboBox)s).SelectedItem;
-                if (value.ToString() != labelIndex.Text)
-                    await Task.Run(() => SendSingleCommand(value, REnum.Image));
-            };
-            comboMode.DropDownClosed += async (s, e) =>
-            {
-                object value = ((ComboBox)s).SelectedItem;
-                if (((ComboBox)s).SelectedItem.ToString() != labelMode.Text)
-                    await Task.Run(() => SendSingleCommand(value, REnum.CmdReg));
-            };*/
-
-            comboIndex.DropDownClosed += (s, e) => SendSingleCommand(s, REnum.Image, labelIndex.Text);
-            comboMode.DropDownClosed += (s, e) => SendSingleCommand(s, REnum.CmdReg, labelMode.Text);
+            manualReadButton.Click += async (s, e) => { await Task.Run(() => StartReading()); };
+            RegistersGrid.CellEndEdit += async (s, e) => { await Task.Run(() => CellSetRegisterValue(s, e)); };
+            UploadImageButton.Click += async (s, e) => { await Task.Run(() => UploadImage()); };
             checkBlink.CheckedChanged += (s, e) => numericBlinkTimer.Enabled = checkBlink.Checked;
             checkRefreshPic.CheckedChanged += (s, e) =>
-                groupBlink.Enabled = 
-                groupColor.Enabled = 
-                groupTools.Enabled = 
-                UploadImageButton.Enabled = !checkRefreshPic.Checked;
+                groupBlink.Enabled = groupColor.Enabled = groupTools.Enabled = UploadImageButton.Enabled = !checkRefreshPic.Checked;
             comboMode.SelectedItem = comboMode.Items[0];
-            comboIndex.SelectedItem = comboIndex.Items[0];
+            comboIndex.SelectedItem = comboMode.Items[0];
+            comboIndex.DropDownClosed += async (s, e) => { await Task.Run(() => SetIndex(s)); };
+            comboMode.DropDownClosed += async (s, e) => { await Task.Run(() => SetMode(s)); };
         }
+
         private void FormLoad(object sender, EventArgs e)
         {
             ComDefault();
             AddPorts(comPort);
             FillGrid();
             CreateButtonArray();
+
         }
         private void ComDefault()
         {
@@ -91,7 +76,7 @@ namespace LTL100_9x9
             DataBitsForSerial(dataBits8, null);
             ParityForSerial(ParityNone, null);
             StopBitsForSerial(stopBits1, null);
-            BaudRateSelectedIndexChanged();
+            BaudRateSelectedIndexChanged(null, null);
         }
         private void AddPorts(ComboBox box)
         {
@@ -146,27 +131,28 @@ namespace LTL100_9x9
             stopbits.CheckState = CheckState.Checked;
             StopBitsInfo.Text = stopbits.Text;
         }
-        private void BaudRateSelectedIndexChanged()
+        private void BaudRateSelectedIndexChanged(object sender, EventArgs e)
             => mbRtu.BaudRate = Convert.ToInt32(BaudRate.SelectedItem);
-        private void ToInfoStatus(string msg) 
-            => BeginInvoke((MethodInvoker)(() => InfoStatus.Text = msg));
+        private void ToInfoStatus(string msg) => BeginInvoke((MethodInvoker)(() => { InfoStatus.Text = msg; }));
         private void AfterComEvent(bool sw)
         {
-            comPort.Enabled = 
-                RefreshSerial.Enabled = 
-                TcpPage.Enabled = !sw;
-            mbClass = sw ? new ModBusClass(mbRtu) : null;
+            comPort.Enabled = !sw;
+            RefreshSerial.Enabled = !sw;
+            TcpPage.Enabled = !sw;
+            StaticSettings.mbClass = sw ? new ModBusClass(mbRtu) : null;
         }
         private void AfterTcpEvent(bool sw)
         {
-            RtuPage.Enabled = 
-                IPaddressBox.Enabled = 
-                numericPort.Enabled = !sw;
-            mbClass = sw ? new ModBusClass(mbTcp) : null;
+            RtuPage.Enabled = !sw;
+            IPaddressBox.Enabled = !sw;
+            numericPort.Enabled = !sw;
+            StaticSettings.mbClass = sw ? new ModBusClass(mbTcp) : null;
         }
         private void AfterAnyInterfaceEvent(bool sw)
-            => LTLControlPage.Enabled = 
-                SettingsPanel.Enabled = sw;
+        {
+            LTLControlPage.Enabled = sw;
+            SettingsPanel.Enabled = sw;
+        }
         private void AfterStartReading(bool sw)
             => manualReadButton.Enabled =
                         OpenCom.Enabled =
@@ -192,7 +178,9 @@ namespace LTL100_9x9
             AfterComEvent(mbRtu.IsOpen);
             AfterAnyInterfaceEvent(mbRtu.IsOpen);
         }
-        //* Не тестировалось
+        //
+        //*********************************************************************************************************
+        //
         private void ConnectClick(object sender, EventArgs e)
         {
             try
@@ -224,32 +212,29 @@ namespace LTL100_9x9
             AfterTcpEvent(mbTcp.Connected);
             AfterAnyInterfaceEvent(mbTcp.Connected);
         }
-        //* Не тестировалось
-
-        //*Just mothods
+        //
+        //*********************************************************************************************************
+        //
         private void ButtonColorChange(Button btn)
-           => btn.BackColor = ColorTranslator.FromHtml($"#" +
+            => BeginInvoke((MethodInvoker)(() => {
+                btn.BackColor = ColorTranslator.FromHtml($"#" +
                 $"{(checkRed.Checked ? "FF" : "00")}" +
                 $"{(checkGreen.Checked ? "FF" : "00")}" +
                 $"{(checkBlue.Checked ? "FF" : "00")}");
-        private void FillGrid()
-        {
+            }));
+        private void FillGrid() => BeginInvoke((MethodInvoker)(() => {
             RegistersGrid.Rows.Clear();
             string[] readOnly = { "ReadImage", "DI", "TTL", "Version" };
-            List<DataGridViewRow> rows = new List<DataGridViewRow>();
-            foreach (string enumName in Enum.GetNames(typeof(REnum)))
+            foreach (string enumName in Enum.GetNames(typeof(REnumerate)))
             {
-                Enum.TryParse(enumName, out REnum index);
-                byte size = index == REnum.TTL ? (byte)4 : (byte)2;
-                rows.Add(new DataGridViewRow());
-                rows[rows.Count - 1].CreateCells(RegistersGrid, (int)index, enumName, size);
-                rows[rows.Count - 1].Cells[(int)CEnum.WriteAO].ReadOnly = readOnly.Contains(enumName);
-                rows[rows.Count - 1].Height = 17;
+                Enum.TryParse(enumName, out REnumerate index);
+                byte size = index == REnumerate.TTL ? (byte)4 : (byte)2;
+                RegistersGrid.Rows[RegistersGrid.Rows.Add((int)index, enumName, size)]
+                    .Cells[(int)GridEnum.WriteAO].ReadOnly = readOnly.Contains(enumName);
             }
-            RegistersGrid.Rows.AddRange(rows.ToArray());
-        }
+        }));
         private void SetCellValue(int column, int row, int value, byte[] valueHex)
-            => Invoke((MethodInvoker)(() => {
+            => BeginInvoke((MethodInvoker)(() => {
                 RegistersGrid[column, row].Value = value;
                 RegistersGrid[column, row].ToolTipText = BitConverter.ToString(valueHex).Replace("-", "");
             }));
@@ -321,11 +306,11 @@ namespace LTL100_9x9
                         if (ltl9x9[x, y] != null) ButtonColorChange(ltl9x9[x, y]);
         }
         private void SetInfoFromRegs() => BeginInvoke((MethodInvoker)(() => {
-            labelMode.Text = RegistersGrid[(int)CEnum.ReadAO, (int)REnum.CmdReg].Value.ToString();
+            labelMode.Text = RegistersGrid[(int)GridEnum.ReadAO, (int)REnumerate.CmdReg].Value.ToString();
             comboIndex.Enabled = labelMode.Text == "0";
             labelIndex.Text = labelMode.Text == "3"
-            ? RegistersGrid[(int)CEnum.ReadAO, (int)REnum.DI].Value.ToString()
-            : RegistersGrid[(int)CEnum.ReadAO, (int)REnum.ReadImage].Value.ToString();
+            ? RegistersGrid[(int)GridEnum.ReadAO, (int)REnumerate.DI].Value.ToString()
+            : RegistersGrid[(int)GridEnum.ReadAO, (int)REnumerate.ReadImage].Value.ToString();
             VersionLabel.Text = $"Ver: {RegistersGrid[3, 5].Value}";
             TimeSpan time = TimeSpan.FromSeconds(Convert.ToInt32(RegistersGrid[3, 4].Value));
             WorkTimeLabel.Text = $"TTL: ({time.Days}) " +
@@ -334,76 +319,65 @@ namespace LTL100_9x9
                                     $":{time.Seconds}";
         }));
         private void SetDiscretInput() => BeginInvoke((MethodInvoker)(() => {
-            if (byte.TryParse(RegistersGrid[(int)CEnum.ReadAO, (int)REnum.DI].Value.ToString(), out byte DI)) {
+            if (byte.TryParse(RegistersGrid[(int)GridEnum.ReadAO, (int)REnumerate.DI].Value.ToString(), out byte DI)) {
                 DI_0.BackColor = (DI & 0b0001) != 0 ? Color.LightGreen : Color.White;
                 DI_1.BackColor = (DI & 0b0010) != 0 ? Color.LightGreen : Color.White;
                 DI_2.BackColor = (DI & 0b0100) != 0 ? Color.LightGreen : Color.White;
                 DI_3.BackColor = (DI & 0b1000) != 0 ? Color.LightGreen : Color.White;
             }
         }));
-        async private Task<Reply> WriteRegister(REnum register, ushort value)
+        async private Task<Reply> WriteRegister(REnumerate register, ushort value)
         {
-            byte[] cmdOut = mbClass.FormatModBusCMD((byte)ID.Value, WriteMB.WriteAO, (ushort)register, value);
+            byte[] cmdOut = StaticSettings.mbClass.FormatModBusCMD((byte)ID.Value, ReadMB.WriteAO, (ushort)register, value);
 
-            Tuple<byte[], Reply> reply = mbClass.Handler(cmdOut);
+            Tuple<byte[], Reply> reply = StaticSettings.mbClass.Handler(cmdOut);
             ToInfoStatus($"Отправлено на ID: {ID.Value} : {reply.Item2}");
             if (reply.Item2 == Reply.Ok)
             {
-                if (register == REnum.CmdReg && value == 8107) FillGrid();
+                if (register == REnumerate.CmdReg && value == 8107) FillGrid();
                 await Task.Delay(50);
             }
             return reply.Item2;
         }
-        async private Task<Reply> MWriteRegisters(REnum startRegister, ushort[] values)
+        async private Task<Reply> MWriteRegisters(REnumerate startRegister, ushort[] values)
         {
-            byte[] cmdOut = mbClass.FormatMultiplyAO((byte)ID.Value, (ushort)startRegister, (ushort)values.Length, values);
-            Tuple<byte[], Reply> reply = mbClass.Handler(cmdOut);
+            byte[] cmdOut = StaticSettings.mbClass.FormatMultiplyAO((byte)ID.Value, (ushort)startRegister, (ushort)values.Length, values);
+            Tuple<byte[], Reply> reply = StaticSettings.mbClass.Handler(cmdOut);
             ToInfoStatus($"Отправлено на ID: {ID.Value} : {reply.Item2}");
             await Task.Delay(50);
             return reply.Item2;
         }
+
+
         private void DownloadImage()
         {
-            /* x = 9 => 0|1|2|3|4|5|6|7|8
+            /* x = 9 => 0|0|0|0|0|0|0|0|0
              * y = 3 => 0:red | 1:green | 2:blue*/
             int[,] colors = new int[3, 9];
-            for (int y = 0, i = (int)REnum.led_ctrl_r_0; y < colors.GetLength(0); y++)
+            for (int y = 0, i = (int)REnumerate.led_ctrl_r_0; y < colors.GetLength(0); y++)
                 for (int x = 0; x < colors.GetLength(1); x++, i++)
-                    colors[y, x] = Convert.ToUInt16(RegistersGrid[(int)CEnum.ReadAO, i - 1].Value);
+                    colors[y, x] = Convert.ToUInt16(RegistersGrid[(int)GridEnum.ReadAO, i - 1].Value);
 
             for (int x = 0; x < colors.GetLength(1); x++)
                 for (int y = 0; y < ltl9x9.GetLength(0); y++)
-                    if (ltl9x9[x, y] != null)  
-                        ChangeColorButtons(x, y, $"#" +
-                                                 $"{((colors[0, x] & getBit[y]) != 0 ? "FF" : "00")}" +
-                                                 $"{((colors[1, x] & getBit[y]) != 0 ? "FF" : "00")}" +
-                                                 $"{((colors[2, x] & getBit[y]) != 0 ? "FF" : "00")}");
+                    if (ltl9x9[x, y] != null)  ChangeColorButtons(x, y, $"#" +
+                                                                        $"{((colors[0, x] & getBit[y]) != 0 ? "FF" : "00")}" +
+                                                                        $"{((colors[1, x] & getBit[y]) != 0 ? "FF" : "00")}" +
+                                                                        $"{((colors[2, x] & getBit[y]) != 0 ? "FF" : "00")}");
         }
         private void ChangeColorButtons(int x, int y, string color) => BeginInvoke((MethodInvoker)(() => { 
             ltl9x9[x, y].BackColor = ColorTranslator.FromHtml(color); }));
-        async private void StartReading()
-        {
-            AfterStartReading(autoRButton.Checked);
-            await Task.Run(() => StartReadingAsync());
-            AfterStartReading(autoRButton.Checked);
-        }
-        async private void SendSingleCommand(object sender, REnum cmd, string reg)
-        {
-            string value = ((ComboBox)sender).SelectedItem.ToString();
-            if (value != reg)
-                await Task.Run(() => SendSingleCommandAsync(value, cmd));
-        }
 
-        //Tasks
-        async private Task StartReadingAsync()
+        async private Task StartReading()
         {
+            AfterStartReading(autoRButton.Checked);
             do
             {
                 await semaphoreSlim.WaitAsync();
                 try
                 {
-                    byte[] cmdOut = mbClass.FormatModBusCMD((byte)ID.Value, ReadMB.ReadAO, 0, 35);
-                    Tuple<byte[], Reply> reply = mbClass.Handler(cmdOut);
+                    byte[] cmdOut = StaticSettings.mbClass.FormatModBusCMD((byte)ID.Value, ReadMB.ReadAO, 0, 35);
+                    Tuple<byte[], Reply> reply = StaticSettings.mbClass.Handler(cmdOut);
                     ToInfoStatus(reply.Item2.ToString());
                     if (reply.Item2 == Reply.Ok)
                     {
@@ -411,7 +385,7 @@ namespace LTL100_9x9
                         Array.Copy(reply.Item1, 3, data, 0, reply.Item1.Length - 3);
                         for (int r = 0, i = 0; r < RegistersGrid.Rows.Count; r++)
                         {
-                            byte size = Convert.ToByte(RegistersGrid[(int)CEnum.size, r].Value);
+                            byte size = Convert.ToByte(RegistersGrid[(int)GridEnum.size, r].Value);
                             byte[] dataReg = new byte[size];
                             Array.Copy(data, i, dataReg, 0, size);
                             int dataNum;
@@ -433,18 +407,19 @@ namespace LTL100_9x9
                 }
             }
             while (autoRButton.Checked);
+            AfterStartReading(autoRButton.Checked);
         }
         async private Task CellSetRegisterValue(object sender, DataGridViewCellEventArgs e)
         {
-            Enum.TryParse(RegistersGrid[(int)CEnum.field, e.RowIndex].Value.ToString(), out REnum register);
-            if (RegistersGrid[(int)CEnum.WriteAO, e.RowIndex].Value is null) return;
+            Enum.TryParse(RegistersGrid[(int)GridEnum.field, e.RowIndex].Value.ToString(), out REnumerate register);
+            if (RegistersGrid[(int)GridEnum.WriteAO, e.RowIndex].Value is null) return;
             await semaphoreSlim.WaitAsync();
             try {
-                if (UInt16.TryParse(RegistersGrid[(int)CEnum.WriteAO, e.RowIndex].Value.ToString(), out ushort value)
+                if (UInt16.TryParse(RegistersGrid[(int)GridEnum.WriteAO, e.RowIndex].Value.ToString(), out ushort value)
                     && await WriteRegister(register, value) == Reply.Ok) return;
                 throw new Exception();
             }
-            catch { ToInfoStatus("Error transcieve"); RegistersGrid[(int)CEnum.WriteAO, e.RowIndex].Value = ""; }
+            catch { ToInfoStatus("Error transcieve"); RegistersGrid[(int)GridEnum.WriteAO, e.RowIndex].Value = ""; }
             finally { semaphoreSlim.Release(); }
         }
         async private Task UploadImage()
@@ -457,19 +432,28 @@ namespace LTL100_9x9
             if (checkBlink.Checked) rgbArray[rgbArray.Length - 1] = GetBlinkTout();
             await semaphoreSlim.WaitAsync();
             try {
-                if (GetCellValue((int)CEnum.ReadAO, (int)REnum.CmdReg) != 2)
-                    await WriteRegister(REnum.CmdReg, 2);
-                await MWriteRegisters(REnum.led_ctrl_r_0, rgbArray);
-                await WriteRegister(REnum.CmdReg, 1);
+                if (GetCellValue((int)GridEnum.ReadAO, (int)REnumerate.CmdReg) != 2)
+                    await WriteRegister(REnumerate.CmdReg, 2);
+                await MWriteRegisters(REnumerate.led_ctrl_r_0, rgbArray);
+                await WriteRegister(REnumerate.CmdReg, 1);
             }
-            catch { ToInfoStatus("Error transcieve"); }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
             finally { semaphoreSlim.Release(); }
         }
-        async private Task SendSingleCommandAsync(object value, REnum rEnum)
+        async private Task SetMode(object sender)
         {
+            if (((ComboBox)sender).SelectedItem.ToString() == labelMode.Text) return;
             await semaphoreSlim.WaitAsync();
-            try { await WriteRegister(rEnum, Convert.ToUInt16(value)); }
-            catch { ToInfoStatus("Error transcieve"); }
+            try { await WriteRegister(REnumerate.CmdReg, Convert.ToUInt16(((ComboBox)sender).SelectedItem)); }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            finally { semaphoreSlim.Release(); }
+        }
+        async private Task SetIndex(object sender)
+        {
+            if (((ComboBox)sender).SelectedItem.ToString() == labelMode.Text) return;
+            await semaphoreSlim.WaitAsync();
+            try { await WriteRegister(REnumerate.Image, Convert.ToUInt16(((ComboBox)sender).SelectedItem)); }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
             finally { semaphoreSlim.Release(); }
         }
     }

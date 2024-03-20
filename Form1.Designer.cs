@@ -1,6 +1,6 @@
 ﻿namespace LTL100_9x9
 {
-    partial class mainForm
+    partial class Form1
     {
         /// <summary>
         /// Обязательная переменная конструктора.
@@ -29,10 +29,10 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(mainForm));
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
             this.toolStripSerial = new System.Windows.Forms.ToolStrip();
             this.dataBits = new System.Windows.Forms.ToolStripDropDownButton();
             this.dataBits7 = new System.Windows.Forms.ToolStripMenuItem();
@@ -90,7 +90,6 @@
             this.groupTools = new System.Windows.Forms.GroupBox();
             this.checkFill = new System.Windows.Forms.CheckBox();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.checkRefreshPic = new System.Windows.Forms.CheckBox();
             this.UploadImageButton = new System.Windows.Forms.Button();
             this.groupBlink = new System.Windows.Forms.GroupBox();
             this.label3 = new System.Windows.Forms.Label();
@@ -116,6 +115,7 @@
             this.DI_1 = new System.Windows.Forms.Label();
             this.DI_0 = new System.Windows.Forms.Label();
             this.ltl9x9ToolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.checkRefreshPic = new System.Windows.Forms.CheckBox();
             this.toolStripSerial.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.SignaturePanel.SuspendLayout();
@@ -602,7 +602,6 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.LTLControlPage.Controls.Add(this.panelPage);
             this.LTLControlPage.Controls.Add(this.registersPage);
-            this.LTLControlPage.Enabled = false;
             this.LTLControlPage.Location = new System.Drawing.Point(166, 25);
             this.LTLControlPage.Margin = new System.Windows.Forms.Padding(0);
             this.LTLControlPage.Name = "LTLControlPage";
@@ -646,7 +645,6 @@
             this.labelIndex.Name = "labelIndex";
             this.labelIndex.Size = new System.Drawing.Size(34, 20);
             this.labelIndex.TabIndex = 83;
-            this.labelIndex.Text = "0";
             this.labelIndex.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.ltl9x9ToolTip.SetToolTip(this.labelIndex, "Значение регистра:\r\n - ReadImage при Mode:0\r\n - DI при Mode:3");
             // 
@@ -698,7 +696,6 @@
             this.labelMode.Name = "labelMode";
             this.labelMode.Size = new System.Drawing.Size(34, 20);
             this.labelMode.TabIndex = 83;
-            this.labelMode.Text = "0";
             this.labelMode.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.ltl9x9ToolTip.SetToolTip(this.labelMode, "Значение регистра CmdReg\r\n");
             // 
@@ -756,16 +753,6 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(183, 103);
             this.panel1.TabIndex = 86;
-            // 
-            // checkRefreshPic
-            // 
-            this.checkRefreshPic.AutoSize = true;
-            this.checkRefreshPic.Location = new System.Drawing.Point(2, 25);
-            this.checkRefreshPic.Name = "checkRefreshPic";
-            this.checkRefreshPic.Size = new System.Drawing.Size(98, 17);
-            this.checkRefreshPic.TabIndex = 83;
-            this.checkRefreshPic.Text = "Refresh picture";
-            this.checkRefreshPic.UseVisualStyleBackColor = true;
             // 
             // UploadImageButton
             // 
@@ -915,14 +902,14 @@
             this.RegistersGrid.BackgroundColor = System.Drawing.Color.White;
             this.RegistersGrid.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.RegistersGrid.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.Single;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle1.BackColor = System.Drawing.Color.White;
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.RegistersGrid.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle4.BackColor = System.Drawing.Color.White;
+            dataGridViewCellStyle4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            dataGridViewCellStyle4.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.RegistersGrid.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle4;
             this.RegistersGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.RegistersGrid.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.EnabledColumn,
@@ -930,14 +917,14 @@
             this.SizeColumn,
             this.ReadFieldColumn,
             this.WriteFieldColumn});
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Window;
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.ControlText;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.RegistersGrid.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle5.BackColor = System.Drawing.SystemColors.Window;
+            dataGridViewCellStyle5.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            dataGridViewCellStyle5.ForeColor = System.Drawing.SystemColors.ControlText;
+            dataGridViewCellStyle5.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle5.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle5.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.RegistersGrid.DefaultCellStyle = dataGridViewCellStyle5;
             this.RegistersGrid.Dock = System.Windows.Forms.DockStyle.Fill;
             this.RegistersGrid.EnableHeadersVisualStyles = false;
             this.RegistersGrid.GridColor = System.Drawing.Color.Gray;
@@ -946,14 +933,14 @@
             this.RegistersGrid.MultiSelect = false;
             this.RegistersGrid.Name = "RegistersGrid";
             this.RegistersGrid.RowHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.Single;
-            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle3.BackColor = System.Drawing.Color.White;
-            dataGridViewCellStyle3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.RegistersGrid.RowHeadersDefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle6.BackColor = System.Drawing.Color.White;
+            dataGridViewCellStyle6.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            dataGridViewCellStyle6.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle6.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle6.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.RegistersGrid.RowHeadersDefaultCellStyle = dataGridViewCellStyle6;
             this.RegistersGrid.RowHeadersVisible = false;
             this.RegistersGrid.RowHeadersWidthSizeMode = System.Windows.Forms.DataGridViewRowHeadersWidthSizeMode.AutoSizeToDisplayedHeaders;
             this.RegistersGrid.RowTemplate.Height = 19;
@@ -1120,7 +1107,17 @@
             this.DI_0.Text = "DI.0";
             this.DI_0.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // mainForm
+            // checkRefreshPic
+            // 
+            this.checkRefreshPic.AutoSize = true;
+            this.checkRefreshPic.Location = new System.Drawing.Point(2, 25);
+            this.checkRefreshPic.Name = "checkRefreshPic";
+            this.checkRefreshPic.Size = new System.Drawing.Size(98, 17);
+            this.checkRefreshPic.TabIndex = 83;
+            this.checkRefreshPic.Text = "Refresh picture";
+            this.checkRefreshPic.UseVisualStyleBackColor = true;
+            // 
+            // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -1135,7 +1132,7 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.Name = "mainForm";
+            this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "LTL100 9x9";
             this.toolStripSerial.ResumeLayout(false);
