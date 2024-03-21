@@ -35,7 +35,7 @@ namespace LTL100_9x9
         public mainForm()
         {
             InitializeComponent();
-            this.Text += $" ver{Assembly.GetEntryAssembly().GetName().Version}";
+            this.Text = $"{Assembly.GetEntryAssembly().GetName().Name} {Assembly.GetEntryAssembly().GetName().Version}";
             AddEvents();
         }
         private void AddEvents()
